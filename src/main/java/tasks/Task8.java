@@ -4,8 +4,12 @@ import common.Person;
 import common.PersonService;
 import common.PersonWithResumes;
 import common.Resume;
+
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
   Еще один вариант задачи обогащения
@@ -20,8 +24,23 @@ public class Task8 {
     this.personService = personService;
   }
 
+  /*
+  Возможна ситуация, когда отсутствует ключ в словаре (у персоны нет резюме),
+  в связи с чем было принято решение передавать пустой Set
+  */
   public Set<PersonWithResumes> enrichPersonsWithResumes(Collection<Person> persons) {
-    Set<Resume> resumes = personService.findResumes(Set.of());
-    return Set.of();
+    Set<Resume> resumes = personService.findResumes(persons.stream().map(Person::id).toList());
+    Map<Integer, Set<Resume>> personWithResumesMap = resumes.stream()
+        .collect(Collectors.groupingBy(
+            Resume::personId,
+            Collectors.toSet()
+        ));
+    Set<PersonWithResumes> personWithResumes = persons.stream()
+        .map(person -> new PersonWithResumes(
+            person,
+            personWithResumesMap.getOrDefault(person.id(), Collections.emptySet())
+        ))
+        .collect(Collectors.toSet());
+    return personWithResumes;
   }
 }
