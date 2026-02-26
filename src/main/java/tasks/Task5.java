@@ -3,7 +3,7 @@ package tasks;
 import common.ApiPersonDto;
 import common.Person;
 import common.PersonConverter;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +22,21 @@ public class Task5 {
     this.personConverter = personConverter;
   }
 
+  /*
+  Возможна ситуация, когда отсутствует ключ в словаре (персоне не сопоставляется регион),
+  в связи с чем было принято решение в таких ситуациях использовать перегруженный метод convert(Person person)
+  */
   public List<ApiPersonDto> convert(List<Person> persons, Map<Integer, Integer> personAreaIds) {
-    return new ArrayList<>();
+    List<ApiPersonDto> apiPersonsDto = persons.stream()
+        .map(person -> {
+          Integer areaId = personAreaIds.get(person.id());
+          if (areaId != null) {
+            return personConverter.convert(person, areaId);
+          } else {
+            return personConverter.convert(person);
+          }
+        })
+        .toList();
+    return apiPersonsDto;
   }
 }
