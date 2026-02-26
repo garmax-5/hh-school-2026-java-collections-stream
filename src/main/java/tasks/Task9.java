@@ -1,14 +1,8 @@
 package tasks;
 
 import common.Person;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -21,73 +15,103 @@ P.P.S Здесь ваши правки необходимо прокоммент
  */
 public class Task9 {
 
-  private long count;
-
   // Костыль, эластик всегда выдает в топе "фальшивую персону".
   // Конвертируем начиная со второй
+  /*
+   В первоначальной версии метода, использовалась операция модификации коллекции (remove()).
+   Так как мы не знаем конкретной реализации интерфейса List (коллекция могла быть неизменяемой
+   или реализация не предполагала эффективного удаления по индексу из начала списка),
+   то было принято решение использовать стрим, чтобы избежать модификации коллекции, а также повысить читаемость
+  */
   public List<String> getNames(List<Person> persons) {
-    if (persons.size() == 0) {
-      return Collections.emptyList();
-    }
-    persons.remove(0);
-    return persons.stream().map(Person::firstName).collect(Collectors.toList());
+    return persons.stream()
+        .skip(1)
+        .map(Person::firstName)
+        .toList();
   }
 
   // Зачем-то нужны различные имена этих же персон (без учета фальшивой разумеется)
+  /*
+  В первоначальной версии использовался вызов метода getNames() после чего создавался еще один стрим, где
+  использовалось .distinct() и .collect(Collectors.toSet()) - что является дублированием логики по устранению дубликатов,
+  так как Set по определению хранит уникальные элементы.
+  Можно исправить на следующую реализацию: "new HashSet<>(getNames(persons))".
+  Однако возникает проблема: в getNames() создается стрим и промежуточный List, затем в этом методе создается HashSet из List,
+  Таким образом, мы создаем две коллекции и проходим по элементам дважды. Возникает нагрузка по памяти.
+  Поэтому, было принято решение создать стрим напрямую. Это позволило собрать уникальные элементы сразу в Set, без промежуточного List
+  */
   public Set<String> getDifferentNames(List<Person> persons) {
-    return getNames(persons).stream().distinct().collect(Collectors.toSet());
+    return persons.stream()
+        .skip(1)
+        .map(Person::firstName)
+        .collect(Collectors.toSet());
   }
 
   // Тут фронтовая логика, делаем за них работу - склеиваем ФИО
+  /*
+  В первоначальной версии конкатенация строк через "+" с неизменяемым типом String порождала лишние объекты String,
+  кроме этого, фамилия добавлялась 2 раза, а отчество не использовалось. Так же жесткое добавление пробела в начало давало лишний пробел в итоговой строке,
+  если person.secondName == null.
+  Поэтому было принято решения создать стрим и в потоке фильтровать null значения. Т.о. повысилась читаемость
+  */
   public String convertPersonToString(Person person) {
-    String result = "";
-    if (person.secondName() != null) {
-      result += person.secondName();
-    }
-
-    if (person.firstName() != null) {
-      result += " " + person.firstName();
-    }
-
-    if (person.secondName() != null) {
-      result += " " + person.secondName();
-    }
-    return result;
+    return Stream.of(person.secondName(), person.firstName(), person.middleName())
+        .filter(Objects::nonNull)
+        .collect(Collectors.joining(" "));
   }
 
   // словарь id персоны -> ее имя
+  /*
+  В первоначальной версии начальная емкость внутреннего массива корзин равнялась 1, в связи с чем
+  после добавления элементов произойдет несколько лишних операций расширения массива (по сравнению с первоначальной емкостью = 16).
+  Расширение словаря имеет сложность O(n).
+  Было принято решение переписать с использованием стрим, так же не стал задавать четкую емкость словаря
+  из-за возможности появления дубликатов (размер может оказаться меньше заданной емкости)
+  */
   public Map<Integer, String> getPersonNames(Collection<Person> persons) {
-    Map<Integer, String> map = new HashMap<>(1);
-    for (Person person : persons) {
-      if (!map.containsKey(person.id())) {
-        map.put(person.id(), convertPersonToString(person));
-      }
-    }
-    return map;
+    return persons.stream()
+        .collect(Collectors.toMap(
+            Person::id,
+            this::convertPersonToString,
+            (a, b) -> a
+        ));
   }
 
   // есть ли совпадающие в двух коллекциях персоны?
+  /*
+  Первоначальная версия имела временную сложность выполнения O(n*m) из-за вложенного цикла
+  Текущая версия: O(n+m+1) -> O(n+m)
+    Копирование элементов persons1 в HashSet O(n)
+    Проход по элементам persons2 O(m)
+    Поиск по значению в HashSet O(1)
+  */
   public boolean hasSamePersons(Collection<Person> persons1, Collection<Person> persons2) {
-    boolean has = false;
-    for (Person person1 : persons1) {
-      for (Person person2 : persons2) {
-        if (person1.equals(person2)) {
-          has = true;
-        }
-      }
-    }
-    return has;
+    Set<Person> personsSet = new HashSet<>(persons1);
+    return persons2.stream().anyMatch(personsSet::contains);
   }
 
   // Посчитать число четных чисел
+  /*
+  Так как на входе мы уже получаем стрим, то нет необходимости во внешней переменной count,
+  так как существует терминальный оператор count.
+  */
   public long countEven(Stream<Integer> numbers) {
-    count = 0;
-    numbers.filter(num -> num % 2 == 0).forEach(num -> count++);
-    return count;
+    return numbers.filter(num -> num % 2 == 0).count();
   }
 
   // Загадка - объясните почему assert тут всегда верен
   // Пояснение в чем соль - мы перетасовали числа, обернули в HashSet, а toString() у него вернул их в сортированном порядке
+  /*
+  В HashSet не происходит сортировка, а вывод элементов осуществляется в том же порядке, в котором они лежат во внутренней хэш-таблице.
+  Assert истинен, потому что для данного промежутка в HashSet порядок обхода корзин случайно совпадает с естественным порядком, несмотря на перетасовку.
+  Как это происходит:
+  1. HashSet использует HashMap. Ключ -> корзина по формуле: index = hashCode(key) & (capacity-1)
+  2. Для Integer hashCode равно значению. Числа в данном промежутке имеют последовательные хэш-коды
+  3. При 10000 элементов финальный capacity примерно равен 16384 (10000/0.75=13334 -> ближайшее число со степенью 2 -> 16384)
+  4. Для последовательных чисел из промежутка индексы тоже последовательны (index = n & (16384 -1)), где n - число из промежутка [1,10000]
+  5. Итератор HashSet идет по порядку корзин
+  Таким образом, кажется, что элементы в HashSet хранятся в отсортированном виде
+  */
   void listVsSet() {
     List<Integer> integers = IntStream.rangeClosed(1, 10000).boxed().collect(Collectors.toList());
     List<Integer> snapshot = new ArrayList<>(integers);
