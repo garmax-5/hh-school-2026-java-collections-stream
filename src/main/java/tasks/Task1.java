@@ -42,9 +42,8 @@ public class Task1 {
                 Person::id,
                 Function.identity()
         ));
-    List<Person> orderedPersons = personIds.stream()
+    return personIds.stream()
         .map(personsMap::get)
         .toList();
-    return orderedPersons;
   }
 }
