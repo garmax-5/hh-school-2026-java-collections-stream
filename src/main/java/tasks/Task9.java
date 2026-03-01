@@ -36,15 +36,9 @@ public class Task9 {
   использовалось .distinct() и .collect(Collectors.toSet()) - что является дублированием логики по устранению дубликатов,
   так как Set по определению хранит уникальные элементы.
   Можно исправить на следующую реализацию: "new HashSet<>(getNames(persons))".
-  Однако возникает проблема: в getNames() создается стрим и промежуточный List, затем в этом методе создается HashSet из List,
-  Таким образом, мы создаем две коллекции и проходим по элементам дважды. Возникает нагрузка по памяти.
-  Поэтому, было принято решение создать стрим напрямую. Это позволило собрать уникальные элементы сразу в Set, без промежуточного List
   */
   public Set<String> getDifferentNames(List<Person> persons) {
-    return persons.stream()
-        .skip(1)
-        .map(Person::firstName)
-        .collect(Collectors.toSet());
+    return new HashSet<>(getNames(persons));
   }
 
   // Тут фронтовая логика, делаем за них работу - склеиваем ФИО
