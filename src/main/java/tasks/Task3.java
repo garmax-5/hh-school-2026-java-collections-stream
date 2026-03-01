@@ -17,13 +17,12 @@ public class Task3 {
   в связи с этим было принято решение добавить компаратор, обрабатывающий null, помещая их в конец списка
   */
   public static List<Person> sort(Collection<Person> persons) {
-    List<Person> sortPersons = persons.stream()
+    return persons.stream()
         .sorted(Comparator
             .comparing(Person::secondName, Comparator.nullsLast(String::compareTo))
             .thenComparing(Person::firstName, Comparator.nullsLast(String::compareTo))
             .thenComparing(Person::createdAt)
         )
         .toList();
-    return sortPersons;
   }
 }
