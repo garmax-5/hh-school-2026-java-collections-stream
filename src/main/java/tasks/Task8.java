@@ -35,12 +35,11 @@ public class Task8 {
             Resume::personId,
             Collectors.toSet()
         ));
-    Set<PersonWithResumes> personWithResumes = persons.stream()
+    return persons.stream()
         .map(person -> new PersonWithResumes(
             person,
             personWithResumesMap.getOrDefault(person.id(), Collections.emptySet())
         ))
         .collect(Collectors.toSet());
-    return personWithResumes;
   }
 }
