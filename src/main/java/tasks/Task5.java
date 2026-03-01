@@ -27,16 +27,8 @@ public class Task5 {
   в связи с чем было принято решение в таких ситуациях использовать перегруженный метод convert(Person person)
   */
   public List<ApiPersonDto> convert(List<Person> persons, Map<Integer, Integer> personAreaIds) {
-    List<ApiPersonDto> apiPersonsDto = persons.stream()
-        .map(person -> {
-          Integer areaId = personAreaIds.get(person.id());
-          if (areaId != null) {
-            return personConverter.convert(person, areaId);
-          } else {
-            return personConverter.convert(person);
-          }
-        })
+    return persons.stream()
+        .map(person -> personConverter.convert(person, personAreaIds.get(person.id())))
         .toList();
-    return apiPersonsDto;
   }
 }
