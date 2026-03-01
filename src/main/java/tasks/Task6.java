@@ -34,12 +34,11 @@ public class Task6 {
             Function.identity(),
             (a, b) -> a
         ));
-    Set<String> personDescriptions = persons.stream()
+    return persons.stream()
         .flatMap(person -> personAreaIds.getOrDefault(person.id(), Collections.emptySet()).stream()
             .map(areasMap::get)
             .map(area -> person.firstName() + " - " + area.getName())
         )
         .collect(Collectors.toSet());
-    return personDescriptions;
   }
 }
